@@ -1,17 +1,79 @@
-import express from 'express'
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+import { testConnection } from './config/database.js';
+import { setupSwagger } from './config/swagger.js';
 
-const app = express()
+// Rutas
+import authRoutes from './routes/authRoutes.js';
+import usuarioRoutes from './routes/usuarioRoutes.js';
+import categoriaRoutes from './routes/categoriaRoutes.js';
+import productoRoutes from './routes/productoRoutes.js';
+import boletaRoutes from './routes/boletaRoutes.js';
 
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middlewares
+app.use(helmet());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Swagger Documentation
+setupSwagger(app);
+
+// Rutas de la API
 app.get('/', (_req, res) => {
-  res.send('Hello Express!')
-})
+  res.json({
+    message: 'Level Up Gamer API',
+    version: '1.0.0',
+    documentation: '/api-docs',
+    endpoints: {
+      auth: '/api/auth',
+      usuarios: '/api/usuarios',
+      categorias: '/api/categorias',
+      productos: '/api/productos',
+      boletas: '/api/boletas'
+    }
+  });
+});
 
-app.get('/api/users/:id', (_req, res) => {
-  res.json({ id: _req.params.id })
-})
+app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/categorias', categoriaRoutes);
+app.use('/api/productos', productoRoutes);
+app.use('/api/boletas', boletaRoutes);
 
-app.get('/api/posts/:postId/comments/:commentId', (_req, res) => {
-  res.json({ postId: _req.params.postId, commentId: _req.params.commentId })
-})
+// Manejo de rutas no encontradas
+app.use((_req, res) => {
+  res.status(404).json({ message: 'Ruta no encontrada' });
+});
 
-export default app
+// Manejo de errores global
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
+});
+
+// Iniciar servidor solo si no estamos en Vercel
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, async () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
+    await testConnection();
+  });
+}
+
+export default app;

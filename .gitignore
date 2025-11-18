@@ -9,7 +9,16 @@
 .idea/shelf
 
 # deps
-node_modules/
+node_modules
+dist
+.env
+.env.local
+.env.production
+*.log
+.DS_Store
+.vercel
+coverage
+.vscode/
 
 # env
 .env
