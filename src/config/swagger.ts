@@ -20,7 +20,7 @@ const options = {
         description: 'Servidor de desarrollo'
       },
       {
-        url: 'https://your-app.vercel.app',
+        url: 'https://express-ci8516oos-maximiliano-diazs-projects.vercel.app',
         description: 'Servidor de producción'
       }
     ],
@@ -86,7 +86,7 @@ const options = {
       { name: 'Boletas', description: 'Gestión de órdenes de compra' }
     ]
   },
-  apis: ['./src/controllers/*.ts', './src/routes/*.ts']
+  apis: ['./src/controllers/*.ts', './dist/controllers/*.js']
 };
 
 const specs = swaggerJsdoc(options);
