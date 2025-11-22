@@ -22,6 +22,7 @@ export const getAllProductos = async (req: AuthRequest, res: Response): Promise<
   try {
     const { categoria_id } = req.query;
 
+    // Intentar con JOIN primero, si falla, intentar sin JOIN
     let query = supabase
       .from('productos')
       .select('*, categorias(id, nombre)')
@@ -31,14 +32,43 @@ export const getAllProductos = async (req: AuthRequest, res: Response): Promise<
       query = query.eq('categoria_id', categoria_id);
     }
 
-    const { data, error } = await query;
+    let { data, error } = await query;
 
-    if (error) throw error;
+    // Si el JOIN falla, intentar sin JOIN (puede ser que la relación no esté configurada)
+    if (error && (error.message?.includes('relation') || error.message?.includes('foreign key'))) {
+      console.warn('⚠️ JOIN con categorias falló, intentando sin JOIN:', error.message);
+      
+      // Intentar sin JOIN
+      query = supabase
+        .from('productos')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    res.json(data);
-  } catch (error) {
-    console.error('Error en getAllProductos:', error);
-    res.status(500).json({ message: 'Error al obtener productos' });
+      if (categoria_id) {
+        query = query.eq('categoria_id', categoria_id);
+      }
+
+      const result = await query;
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error) {
+      console.error('❌ Error en getAllProductos:', error);
+      res.status(500).json({ 
+        message: 'Error al obtener productos',
+        error: process.env.NODE_ENV === 'development' ? (error?.message || String(error)) : undefined
+      });
+      return;
+    }
+
+    res.json(data || []);
+  } catch (error: any) {
+    console.error('❌ Error en getAllProductos:', error);
+    res.status(500).json({ 
+      message: 'Error al obtener productos',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -62,21 +92,41 @@ export const getProductoById = async (req: AuthRequest, res: Response): Promise<
   try {
     const { id } = req.params;
 
-    const { data, error } = await supabase
+    // Intentar con JOIN primero
+    let { data, error } = await supabase
       .from('productos')
       .select('*, categorias(id, nombre)')
       .eq('id', id)
       .single();
 
+    // Si el JOIN falla, intentar sin JOIN
+    if (error && (error.message?.includes('relation') || error.message?.includes('foreign key'))) {
+      console.warn('⚠️ JOIN con categorias falló, intentando sin JOIN');
+      const result = await supabase
+        .from('productos')
+        .select('*')
+        .eq('id', id)
+        .single();
+      data = result.data;
+      error = result.error;
+    }
+
     if (error || !data) {
-      res.status(404).json({ message: 'Producto no encontrado' });
+      console.error('❌ Error en getProductoById:', error);
+      res.status(404).json({ 
+        message: 'Producto no encontrado',
+        error: process.env.NODE_ENV === 'development' ? (error?.message || String(error)) : undefined
+      });
       return;
     }
 
     res.json(data);
-  } catch (error) {
-    console.error('Error en getProductoById:', error);
-    res.status(500).json({ message: 'Error al obtener producto' });
+  } catch (error: any) {
+    console.error('❌ Error en getProductoById:', error);
+    res.status(500).json({ 
+      message: 'Error al obtener producto',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

@@ -86,9 +86,36 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         rol: data.rol
       }
     });
-  } catch (error) {
-    console.error('Error en register:', error);
-    res.status(500).json({ message: 'Error al registrar usuario' });
+  } catch (error: any) {
+    console.error('❌ Error en register:', error);
+    console.error('Detalles del error:', {
+      message: error?.message,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint
+    });
+    
+    // Mensaje más específico según el tipo de error
+    let errorMessage = 'Error al registrar usuario';
+    
+    if (error?.message) {
+      if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+        errorMessage = 'El email ya está registrado';
+      } else if (error.message.includes('violates check constraint')) {
+        errorMessage = 'El rol debe ser: Cliente, Vendedor o Administrador';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
+    res.status(500).json({ 
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details
+      } : undefined
+    });
   }
 };
 

@@ -3,14 +3,30 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+// Obtener credenciales de Supabase desde variables de entorno
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Validar que las credenciales estén configuradas
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️ Supabase credentials not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env file');
+  console.error('❌ Error: Supabase credentials not configured!');
+  console.error('⚠️  Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your .env file');
+  console.error('');
+  console.error('Example .env file:');
+  console.error('  SUPABASE_URL=https://your-project.supabase.co');
+  console.error('  SUPABASE_SERVICE_ROLE_KEY=your-service-role-key');
+  console.error('');
+  console.error('See SUPABASE-SETUP.md for detailed instructions.');
+  process.exit(1);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Crear cliente de Supabase
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export const testConnection = async () => {
   try {
