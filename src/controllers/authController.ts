@@ -79,7 +79,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     res.status(201).json({
       message: 'Usuario registrado exitosamente',
       token,
-      user: {
+      usuario: {
         id: data.id,
         nombre: data.nombre,
         email: data.email,
@@ -152,7 +152,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.json({
       message: 'Login exitoso',
       token,
-      user: {
+      usuario: {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
