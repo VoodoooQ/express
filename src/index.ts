@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
@@ -27,8 +27,22 @@ app.use((req, res, next) => {
   next();
 });
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:3001',
+      'http://localhost:5173',
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(morgan('dev'));
 app.use(express.json());
@@ -76,10 +90,12 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 // Iniciar servidor solo si no estamos en Vercel
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, async () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
+    console.log(`ðŸš€ Server running on http://localhost:${PORT}`);
+    console.log(`ðŸ“š API Documentation available at http://localhost:${PORT}/api-docs`);
     await testConnection();
   });
 }
 
 export default app;
+
+
